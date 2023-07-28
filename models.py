@@ -8,3 +8,4 @@ class User(BaseModel):
 class Message(BaseModel):
     username: str
     message: str
+    type: str | None

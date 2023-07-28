@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&family=Karla:ital,wght@0,300;0,400;0,700;0,800;1,300;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,300;1,400&family=Karla:ital,wght@0,300;0,400;0,700;0,800;1,300;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
       rel="stylesheet"
     />
     <!-- Normalize -->
@@ -38,6 +38,11 @@
 
       .message {
         line-height: 1.8;
+      }
+
+      .message .event {
+        font-weight: 300;
+        font-style: italic;
       }
 
       .username {
@@ -91,42 +96,45 @@
         const resp = await fetch(`${window.location.origin}/messages`);
         const messages = await resp.json();
         messages.forEach(appendMessage);
-      });
 
-      const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
+        const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
 
-      function sendMessage(evt) {
-        evt.preventDefault();
-        const message = document.querySelector("#message").value;
-        ws.send(message);
-        document.querySelector("#message").value = "";
-      }
+        ws.addEventListener("message", function (message) {
+          appendMessage(JSON.parse(message.data));
+        });
 
-      const form = document.querySelector("#send-message");
-      form.addEventListener("submit", sendMessage);
+        function sendMessage(evt) {
+          evt.preventDefault();
+          const message = document.querySelector("#message").value;
+          ws.send(message);
+          document.querySelector("#message").value = "";
+        }
 
-      function appendMessage(m) {
-        const { username, message } = m;
+        const form = document.querySelector("#send-message");
+        form.addEventListener("submit", sendMessage);
 
-        const div = document.createElement("div");
-        div.classList.add("message");
+        function appendMessage(m) {
+          const { username, message, type } = m;
 
-        const usernameEl = document.createElement("span");
-        usernameEl.classList.add("username");
-        usernameEl.appendChild(document.createTextNode(`${username}: `));
+          const div = document.createElement("div");
+          div.classList.add("message");
 
-        const messageEl = document.createElement("span");
-        messageEl.appendChild(document.createTextNode(message));
+          const usernameEl = document.createElement("span");
+          usernameEl.classList.add("username");
+          usernameEl.appendChild(document.createTextNode(`${username}: `));
 
-        div.append(usernameEl);
-        div.append(messageEl);
-        const chat = document.getElementById("chat");
-        chat.appendChild(div);
-      }
+          const messageEl = document.createElement("span");
+          if (type === "event") {
+            messageEl.classList.add("event");
+          }
+          messageEl.appendChild(document.createTextNode(message));
 
-      ws.addEventListener("message", function (message) {
-        appendMessage(JSON.parse(message.data));
+          div.append(usernameEl);
+          div.append(messageEl);
+          const chat = document.getElementById("chat");
+          chat.appendChild(div);
+        }
       });
     </script>
   </body>

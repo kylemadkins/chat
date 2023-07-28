@@ -53,15 +53,17 @@ async def ws(ws: WebSocket):
     username = ws.cookies.get("X-Authorization")
     if username:
         await manager.connect(ws)
-        resp = Message(username=username, message="Connected")
+        resp = Message(username=username, message="joined", type="event")
         await manager.broadcast(resp)
         try:
             while True:
                 message = await ws.receive_text()
                 resp.message = message
+                resp.type = "message"
                 await dbconn.add_message(resp)
                 await manager.broadcast(resp)
         except WebSocketDisconnect:
             manager.disconnect(ws)
-            resp.message = "Disconnected"
+            resp.message = "left"
+            resp.type = "event"
             await manager.broadcast(resp)
