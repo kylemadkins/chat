@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from db import Redis
 from ws import ConnectionManager
 from models import User, Message
+from profanity import ProfanityFilter
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -19,6 +20,8 @@ except:
     exit(1)
 
 manager = ConnectionManager()
+
+pf = ProfanityFilter()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -44,6 +47,8 @@ async def messages(request: Request, response: Response) -> list[Message]:
     username = request.cookies.get("X-Authorization")
     if username:
         messages = await dbconn.get_messages()
+        for message in messages:
+            message.message = pf.censor(message.message)
         return messages
     response.status_code = status.HTTP_401_UNAUTHORIZED
 
@@ -61,6 +66,7 @@ async def ws(ws: WebSocket):
                 resp.message = message
                 resp.type = "message"
                 await dbconn.add_message(resp)
+                resp.message = pf.censor(resp.message)
                 await manager.broadcast(resp)
         except WebSocketDisconnect:
             manager.disconnect(ws)
