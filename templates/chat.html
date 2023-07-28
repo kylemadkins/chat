@@ -4,36 +4,84 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Chat App</title>
+    <title>Chat</title>
     <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&family=Karla:ital,wght@0,300;0,400;0,700;0,800;1,300;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic"
     />
-    <!-- CSS Reset -->
+    <!-- Normalize -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css"
     />
-    <!-- Milligram CSS -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css"
-    />
+    <style>
+      body {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 16px;
+      }
+
+      .container {
+        padding: 2rem;
+      }
+
+      h1 {
+        font-family: "IBM Plex Sans Condensed", sans-serif;
+        margin: 0 0 2rem 0;
+      }
+
+      #chat {
+        margin: 0 0 2rem 0;
+      }
+
+      .message {
+        line-height: 1.8;
+      }
+
+      .username {
+        font-weight: 500;
+      }
+
+      #send-message {
+        display: flex;
+      }
+
+      #message {
+        border: 1px solid #000;
+        border-radius: 0;
+        border-right: 0;
+        padding: 0.5rem;
+        width: 100%;
+        max-width: 300px;
+      }
+
+      #message::placeholder {
+        font-style: italic;
+        color: #9a9a9a;
+      }
+
+      #submit {
+        -webkit-appearance: none;
+        appearance: none;
+        border: none;
+        background-color: #000;
+        color: #fff;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
       <div class="row">
         <div class="column">
           <h1>Chat</h1>
-          <table id="chat">
-            <tbody>
-              <tr></tr>
-            </tbody>
-          </table>
+          <div id="chat"></div>
           <form id="send-message">
             <input id="message" type="text" placeholder="Enter a message..." />
-            <input type="submit" value="Send" />
+            <input id="submit" type="submit" value="Send" />
           </form>
         </div>
       </div>
@@ -60,16 +108,21 @@
 
       function appendMessage(m) {
         const { username, message } = m;
-        const tr = document.createElement("tr");
-        const usernameEl = document.createElement("td");
-        usernameEl.appendChild(document.createTextNode(username));
-        const messageEl = document.createElement("td");
+
+        const div = document.createElement("div");
+        div.classList.add("message");
+
+        const usernameEl = document.createElement("span");
+        usernameEl.classList.add("username");
+        usernameEl.appendChild(document.createTextNode(`${username}: `));
+
+        const messageEl = document.createElement("span");
         messageEl.appendChild(document.createTextNode(message));
 
-        tr.append(usernameEl);
-        tr.append(messageEl);
-        const tbody = document.querySelector("tbody");
-        tbody.appendChild(tr);
+        div.append(usernameEl);
+        div.append(messageEl);
+        const chat = document.getElementById("chat");
+        chat.appendChild(div);
       }
 
       ws.addEventListener("message", function (message) {
