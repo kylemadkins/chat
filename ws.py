@@ -2,6 +2,8 @@ import asyncio
 
 from fastapi import WebSocket
 
+from models import Message
+
 
 class ConnectionManager:
     _connections: list[WebSocket] = []
@@ -13,5 +15,7 @@ class ConnectionManager:
     def disconnect(self, ws: WebSocket):
         self._connections.remove(ws)
 
-    async def broadcast(self, message: str):
-        await asyncio.gather(*[c.send_text(message) for c in self._connections])
+    async def broadcast(self, message: Message):
+        await asyncio.gather(
+            *[c.send_json(message.model_dump()) for c in self._connections]
+        )

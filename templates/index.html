@@ -31,52 +31,34 @@
               <tr></tr>
             </tbody>
           </table>
-          <form id="send-message">
+          <form id="join">
             <input id="username" type="text" placeholder="Username" />
-            <input id="message" type="text" placeholder="Enter a message..." />
-            <input type="submit" value="Send" />
+            <input type="submit" value="Join" />
           </form>
         </div>
       </div>
     </div>
     <script>
-      window.addEventListener("load", async function fetchMessages() {
-        const resp = await fetch(`${window.location.origin}/messages`);
-        const messages = await resp.json();
-        messages.forEach(appendMessage);
-      });
-
-      const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
-
-      function sendMessage(evt) {
+      function join(evt) {
         evt.preventDefault();
         const username = document.querySelector("#username").value;
-        const message = document.querySelector("#message").value;
-        ws.send(JSON.stringify({ username, message }));
-        document.querySelector("#message").value = "";
+        fetch("/join", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username: username }),
+        })
+          .then(function () {
+            window.location.href = "/chat";
+          })
+          .catch(function () {
+            window.alert("Unable to join chat");
+          });
       }
 
-      const form = document.querySelector("#send-message");
-      form.addEventListener("submit", sendMessage);
-
-      function appendMessage(m) {
-        const { username, message } = JSON.parse(m);
-        const tr = document.createElement("tr");
-        const usernameEl = document.createElement("td");
-        usernameEl.appendChild(document.createTextNode(username));
-        const messageEl = document.createElement("td");
-        messageEl.appendChild(document.createTextNode(message));
-
-        tr.append(usernameEl);
-        tr.append(messageEl);
-        const tbody = document.querySelector("tbody");
-        tbody.appendChild(tr);
-      }
-
-      ws.addEventListener("message", function (message) {
-        appendMessage(message.data);
-      });
+      const form = document.querySelector("#join");
+      form.addEventListener("submit", join);
     </script>
   </body>
 </html>

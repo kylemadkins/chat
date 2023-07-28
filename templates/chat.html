@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Chat App</title>
+    <!-- Google Fonts -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic"
+    />
+    <!-- CSS Reset -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css"
+    />
+    <!-- Milligram CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="column">
+          <h1>Chat</h1>
+          <table id="chat">
+            <tbody>
+              <tr></tr>
+            </tbody>
+          </table>
+          <form id="send-message">
+            <input id="message" type="text" placeholder="Enter a message..." />
+            <input type="submit" value="Send" />
+          </form>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.addEventListener("load", async function fetchMessages() {
+        const resp = await fetch(`${window.location.origin}/messages`);
+        const messages = await resp.json();
+        messages.forEach(appendMessage);
+      });
+
+      const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
+
+      function sendMessage(evt) {
+        evt.preventDefault();
+        const message = document.querySelector("#message").value;
+        ws.send(message);
+        document.querySelector("#message").value = "";
+      }
+
+      const form = document.querySelector("#send-message");
+      form.addEventListener("submit", sendMessage);
+
+      function appendMessage(m) {
+        const { username, message } = m;
+        const tr = document.createElement("tr");
+        const usernameEl = document.createElement("td");
+        usernameEl.appendChild(document.createTextNode(username));
+        const messageEl = document.createElement("td");
+        messageEl.appendChild(document.createTextNode(message));
+
+        tr.append(usernameEl);
+        tr.append(messageEl);
+        const tbody = document.querySelector("tbody");
+        tbody.appendChild(tr);
+      }
+
+      ws.addEventListener("message", function (message) {
+        appendMessage(JSON.parse(message.data));
+      });
+    </script>
+  </body>
+</html>

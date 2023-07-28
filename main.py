@@ -1,11 +1,12 @@
 import os
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Response, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from db import Redis
 from ws import ConnectionManager
+from models import User, Message
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -25,19 +26,42 @@ def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/messages", response_class=JSONResponse)
-async def messages():
-    messages = await dbconn.get_messages()
-    return messages
+@app.get("/chat", response_class=HTMLResponse)
+def chat(request: Request):
+    username = request.cookies.get("X-Authorization")
+    if username:
+        return templates.TemplateResponse("chat.html", {"request": request})
+    return RedirectResponse("/")
+
+
+@app.post("/join")
+def join(user: User, response: Response):
+    response.set_cookie(key="X-Authorization", value=user.username, httponly=True)
+
+
+@app.get("/messages")
+async def messages(request: Request, response: Response) -> list[Message]:
+    username = request.cookies.get("X-Authorization")
+    if username:
+        messages = await dbconn.get_messages()
+        return messages
+    response.status_code = status.HTTP_401_UNAUTHORIZED
 
 
 @app.websocket("/ws")
 async def ws(ws: WebSocket):
-    await manager.connect(ws)
-    try:
-        while True:
-            message = await ws.receive_text()
-            await dbconn.add_message(message)
-            await manager.broadcast(message)
-    except WebSocketDisconnect:
-        manager.disconnect(ws)
+    username = ws.cookies.get("X-Authorization")
+    if username:
+        await manager.connect(ws)
+        resp = Message(username=username, message="Connected")
+        await manager.broadcast(resp)
+        try:
+            while True:
+                message = await ws.receive_text()
+                resp.message = message
+                await dbconn.add_message(resp)
+                await manager.broadcast(resp)
+        except WebSocketDisconnect:
+            manager.disconnect(ws)
+            resp.message = "Disconnected"
+            await manager.broadcast(resp)
