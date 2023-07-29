@@ -1,4 +1,5 @@
 import os
+import html
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -39,7 +40,9 @@ def chat(request: Request):
 
 @app.post("/join")
 def join(user: User, response: Response):
-    response.set_cookie(key="X-Authorization", value=user.username, httponly=True)
+    response.set_cookie(
+        key="X-Authorization", value=html.escape(user.username), httponly=True
+    )
 
 
 @app.get("/messages")
@@ -63,7 +66,7 @@ async def ws(ws: WebSocket):
         try:
             while True:
                 message = await ws.receive_text()
-                resp.message = message
+                resp.message = html.escape(message)
                 resp.type = "message"
                 await dbconn.add_message(resp)
                 resp.message = pf.censor(resp.message)
