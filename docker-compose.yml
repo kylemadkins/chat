@@ -22,9 +22,6 @@ services:
       - .env
     networks:
       - redis_network
-      - profanity-filter_profanity_network
 
 networks:
   redis_network:
-  profanity-filter_profanity_network:
-    external: true
